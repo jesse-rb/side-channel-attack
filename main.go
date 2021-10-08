@@ -4,33 +4,36 @@ import (
 	"fmt"
 	"time"
 	"log"
+	"math"
 )
 
 func experiment(bytes []byte, steps int, incr int) (time.Duration) {
 	var lengthMod int = len(bytes)-1
 	var elapsedAvg int64 = 0
-
-	for i := 0; i <= 50; i++ {
+	var reps int = 50;
+	for i := 0; i < reps+1; i++ {
 		begin := time.Now()
-		for i := 0; i < len(bytes)-1; i++ {
-			bytes[(i*incr)&lengthMod]++ // Fast modulus operation
-			// log.Println(fmt.Sprintf("%d", bytes[(i*incr)&lengthMod]))
+		for j := 0; j < steps; j++ {
+			bytes[(j*incr)&lengthMod]++ // Fast modulus operation
 		}
+		if i == 0 { continue }
 		elapsedAvg += time.Since(begin).Nanoseconds()
-	}
+	}	
 	
-	elapsedAvg = elapsedAvg/int64(len(bytes))
+	elapsedAvg = elapsedAvg/int64(reps)
 	return time.Duration(elapsedAvg)
 }
 
 func main() {
-	fmt.Printf("Time (Nanoseconds),Array Size (MegaBytes),St eps,Increment\n")
-	for i := 1; i <= 32; i++ {
-		var bytes	[]byte	= make([]byte, i*1024*1024)
+	fmt.Printf("Time (Nanoseconds),Array Size (KiB), Log 2 Array Size (B),St eps,Increment\n")
+	var arrSize = 1024; // Start at 1 KB
+	for i := 1; i <= 21; i++ {
+		var bytes	[]byte	= make([]byte, arrSize)
 		var steps	int 	= 64 * 1024 * 1024
 		var incr	int		= 16
 		elapsed := experiment(bytes, steps, incr)
-		log.Println(fmt.Sprintf("%d", i));
-		fmt.Printf("%d,%d,%d,%d\n", elapsed.Nanoseconds(), len(bytes)/(1024*1024), steps, incr)
+		arrSize = arrSize*2 // Double array size each time
+		log.Println(fmt.Sprintf("%d", i))
+		fmt.Printf("%d,%d,%f,%d,%d\n", elapsed.Nanoseconds(), arrSize/1024, math.Log2(float64(arrSize)), steps, incr)
 	}
 }
